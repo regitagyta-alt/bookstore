@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookStore — Preview Interaktif Toko Buku</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <!-- NAVBAR -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <button onclick="navigate('home')" class="flex items-center space-x-2.5 text-left">
+                    <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
+                        <i class="fas fa-book-open text-lg"></i>
+                    </div>
+                    <span class="font-extrabold text-xl tracking-tight text-slate-900">Book<span class="text-indigo-600">Store</span></span>
+                </button>
+
+                <div class="hidden md:flex items-center space-x-6 text-sm font-medium" id="nav-links"></div>
+
+                <div class="flex items-center space-x-3" id="nav-actions"></div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="flex md:hidden justify-around py-2 border-t border-slate-100 text-xs font-medium text-slate-600" id="mobile-nav"></div>
+        </div>
+    </nav>
+
+    <!-- FLASH NOTIFICATION -->
+    <div id="flash-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full hidden"></div>
+
+    <!-- MAIN CONTENT -->
+    <main id="app-content" class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"></main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-2">
+            <p>&copy; 2026 <strong>BookStore App</strong> — Uji Kompetensi Pemrograman Web (Simulasi Preview).</p>
+            <p>Jl. Zanzibar, Sulawesi Tengah, Indonesia.</p>
+        </div>
+    </footer>
+
+    <script>
+        // =====================================================================
+        // SIMULASI DATABASE SQL (IN-MEMORY STATE)
+        // =====================================================================
+        const db = {
+            users: [
+                { id: 1, nama: 'Administrator Toko', email: 'admin@bookstore.com', password: '123', role: 'admin', alamat: 'Jl. Zanzibar, Sulawesi Tengah', created_at: '2026-01-10 08:00' },
+                { id: 2, nama: 'Balqis', email: 'balqis@bookstore.com', password: '123', role: 'user', alamat: 'Jl. Zanzibar No. 45, Sulawesi Tengah', created_at: '2026-01-12 10:30' }
+            ],
+            categories: [
+                { id: 1, nama_kategori: 'Pemrograman & IT', deskripsi: 'Buku seputar rekayasa perangkat lunak, web development, dan database.' },
+                { id: 2, nama_kategori: 'Bisnis & Manajemen', deskripsi: 'Buku strategi bisnis, kepemimpinan, dan kewirausahaan.' },
+                { id: 3, nama_kategori: 'Fiksi & Sastra', deskripsi: 'Novel populer, cerita pendek, dan karya sastra klasik.' },
+                { id: 4, nama_kategori: 'Sains & Teknologi', deskripsi: 'Pengetahuan populer, fisika, astronomi, dan inovasi masa depan.' }
+            ],
+            books: [
+                { id: 1, category_id: 1, judul: 'Mastering PHP 8 & MySQL Modern', penulis: 'Andi Pratama', penerbit: 'Informatika Press', tahun_terbit: 2024, harga: 145000, stok: 25, deskripsi: 'Panduan lengkap membangun aplikasi web dinamis dari nol hingga mahir menggunakan PHP dan database relasional MySQL.', cover_color: 'bg-blue-600' },
+                { id: 2, category_id: 1, judul: 'Clean Code: Prinsip Arsitektur Web', penulis: 'Robert C. Martin', penerbit: 'Pustaka Kode', tahun_terbit: 2023, harga: 185000, stok: 15, deskripsi: 'Teknik menulis kode yang bersih, terstruktur, mudah dipelihara, dan sesuai standar industri perangkat lunak.', cover_color: 'bg-indigo-600' },
+                { id: 3, category_id: 2, judul: 'Filosofi Startup Digital', penulis: 'Rina Wijaya', penerbit: 'Gramedia Pustaka', tahun_terbit: 2024, harga: 110000, stok: 30, deskripsi: 'Strategi membangun perusahaan rintisan teknologi dari tahap validasi ide hingga ekspansi pasar.', cover_color: 'bg-emerald-600' },
+                { id: 4, category_id: 3, judul: 'Jejak Langkah di Ujung Senja', penulis: 'Tere Liye', penerbit: 'Republika Penerbit', tahun_terbit: 2022, harga: 95000, stok: 40, deskripsi: 'Kisah perjalanan penuh makna tentang persahabatan, perjuangan, dan arti pulang ke rumah.', cover_color: 'bg-amber-600' },
+                { id: 5, category_id: 4, judul: 'Kosmos & Rahasia Alam Semesta', penulis: 'Carl Sagan', penerbit: 'Kepustakaan Populer', tahun_terbit: 2021, harga: 160000, stok: 12, deskripsi: 'Eksplorasi mendalam mengenai bintang, galaksi, dan sejarah umat manusia memahami ruang angkasa.', cover_color: 'bg-purple-600' }
+            ],
+            carts: [], // { id, user_id, book_id, qty }
+            messages: [
+                { id: 1, nama_pengirim: 'Balqis', email_pengirim: 'balqis@bookstore.com', subjek: 'Ketersediaan Buku Laravel', pesan: 'Halo Admin, apakah minggu depan akan tersedia buku panduan Laravel 11?', created_at: '2026-01-15 14:20' }
+            ]
+        };
+
+        // State Aplikasi
+        let state = {
+            currentPage: 'home',
+            currentUser: null,
+            searchQuery: '',
+            filterCat: '',
+            editCatId: null,
+            editBookId: null
+        };
+
+        // Helper Format Rupiah
+        const formatRupiah = (num) => 'Rp ' + Number(num).toLocaleString('id-ID');
+
+        // Helper Notifikasi
+        function showFlash(type, message) {
+            const container = document.getElementById('flash-container');
+            const isSuccess = type === 'success';
+            container.innerHTML = `
+                <div class="p-4 rounded-xl border flex items-center justify-between shadow-sm ${isSuccess ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'}">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas ${isSuccess ? 'fa-check-circle text-emerald-500' : 'fa-exclamation-circle text-rose-500'} text-lg"></i>
+                        <span class="text-sm font-medium">${message}</span>
+                    </div>
+                    <button onclick="document.getElementById('flash-container').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            container.classList.remove('hidden');
+            setTimeout(() => container.classList.add('hidden'), 4500);
+        }
+
+        function navigate(page) {
+            if (page.startsWith('admin_') && (!state.currentUser || state.currentUser.role !== 'admin')) {
+                showFlash('error', 'Akses ditolak! Halaman ini khusus Administrator.');
+                state.currentPage = 'login';
+            } else {
+                state.currentPage = page;
+            }
+            state.editCatId = null;
+            state.editBookId = null;
+            render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function quickLogin(role) {
+            const user = db.users.find(u => u.role === role);
+            state.currentUser = user;
+            showFlash('success', `Berhasil login instan sebagai ${user.balqis} (${role.toUpperCase()})!`);
+            navigate(role === 'admin' ? 'admin_dashboard' : 'home');
+        }
+
+        function logout() {
+            state.currentUser = null;
+            showFlash('success', 'Anda telah keluar dari akun.');
+            navigate('login');
+        }
+
+        // =====================================================================
+        // RENDER NAVBAR
+        // =====================================================================
+        function renderNavbar() {
+            const isAdmin = state.currentUser && state.currentUser.role === 'admin';
+            const p = state.currentPage;
+
+            document.getElementById('nav-links').innerHTML = `
+                <button onclick="navigate('home')" class="${p === 'home' ? 'text-indigo-600 font-semibold' : 'text-slate-600 hover:text-indigo-600'} transition">Katalog Buku</button>
+                <button onclick="navigate('about')" class="${p === 'about' ? 'text-indigo-600 font-semibold' : 'text-slate-600 hover:text-indigo-600'} transition">About Us</button>
+                <button onclick="navigate('contact')" class="${p === 'contact' ? 'text-indigo-600 font-semibold' : 'text-slate-600 hover:text-indigo-600'} transition">Contact Admin</button>
+                ${isAdmin ? `
+                    <div class="h-5 w-px bg-slate-200"></div>
+                    <button onclick="navigate('admin_dashboard')" class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition">
+                        <i class="fas fa-shield-halved mr-1"></i> Panel Admin
+                    </button>
+                ` : ''}
+            `;
+
+            document.getElementById('mobile-nav').innerHTML = `
+                <button onclick="navigate('home')" class="py-1 hover:text-indigo-600">Katalog</button>
+                <button onclick="navigate('about')" class="py-1 hover:text-indigo-600">About Us</button>
+                <button onclick="navigate('contact')" class="py-1 hover:text-indigo-600">Contact</button>
+                ${isAdmin ? `<button onclick="navigate('admin_dashboard')" class="py-1 text-indigo-600 font-bold">Panel Admin</button>` : ''}
+            `;
+
+            const userCartCount = state.currentUser 
+                ? db.carts.filter(c => c.user_id === state.currentUser.id).reduce((sum, item) => sum + item.qty, 0)
+                : 0;
+
+            document.getElementById('nav-actions').innerHTML = `
+                ${!isAdmin ? `
+                    <button onclick="navigate('cart')" class="relative p-2.5 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition" title="Keranjang Belanja">
+                        <i class="fas fa-shopping-cart text-lg"></i>
+                        ${userCartCount > 0 ? `<span class="absolute -top-1 -right-1 bg-rose-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow">${userCartCount}</span>` : ''}
+                    </button>
+                ` : ''}
+                ${state.currentUser ? `
+                    <div class="flex items-center space-x-3 pl-2 border-l border-slate-200">
+                        <div class="hidden sm:block text-right">
+                            <p class="text-xs font-semibold text-slate-900">${state.currentUser.nama}</p>
+                            <p class="text-[11px] uppercase tracking-wider font-bold ${isAdmin ? 'text-indigo-600' : 'text-emerald-600'}">${state.currentUser.role}</p>
+                        </div>
+                        <button onclick="logout()" class="px-3.5 py-2 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </button>
+                    </div>
+                ` : `
+                    <button onclick="navigate('login')" class="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-indigo-600 transition">Login</button>
+                    <button onclick="navigate('register')" class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition">Daftar</button>
+                `}
+            `;
+        }
+
+        // =====================================================================
+        // RENDER HALAMAN UTAMA
+        // =====================================================================
+        function render() {
+            renderNavbar();
+            const main = document.getElementById('app-content');
+            const p = state.currentPage;
+
+            if (p === 'home') renderHome(main);
+            else if (p === 'login') renderLogin(main);
+            else if (p === 'register') renderRegister(main);
+            else if (p === 'cart') renderCart(main);
+            else if (p === 'about') renderAbout(main);
+            else if (p === 'contact') renderContact(main);
+            else if (p.startsWith('admin_')) renderAdmin(main);
+        }
+
+        // 1. HOME / KATALOG BUKU
+        function renderHome(container) {
+            const isAdmin = state.currentUser && state.currentUser.role === 'admin';
+            const filteredBooks = db.books.filter(b => {
+                const matchQuery = b.judul.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
+                                   b.penulis.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
+                                   b.penerbit.toLowerCase().includes(state.searchQuery.toLowerCase());
+                const matchCat = state.filterCat === '' || b.category_id == state.filterCat;
+                return matchQuery && matchCat;
+            });
+
+            container.innerHTML = `
+                <!-- Quick Switch Role Banner untuk Kemudahan Testing Preview -->
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex items-center space-x-2 text-xs text-amber-900">
+                        <i class="fas fa-bolt text-amber-500 text-base"></i>
+                        <span><strong>Mode Preview Interaktif:</strong> Uji fitur sebagai <strong>Admin</strong> atau <strong>User</strong> dengan 1 klik!</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="quickLogin('admin')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs">Login sbg Admin</button>
+                        <button onclick="quickLogin('user')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-xs">Login sbg User</button>
+                    </div>
+                </div>
+
+                <!-- Hero Banner -->
+                <div class="bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 rounded-2xl p-6 sm:p-10 text-white mb-8 shadow-lg">
+                    <div class="max-w-2xl">
+                        <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide mb-3">
+                            <i class="fas fa-sparkles mr-1"></i> Koleksi Buku Terlengkap & Terpercaya
+                        </span>
+                        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">Temukan Jendela Dunia di Setiap Halaman</h1>
+                        <p class="text-indigo-100 text-sm sm:text-base mb-6">Jelajahi ribuan koleksi buku pemrograman, bisnis, sains, hingga fiksi pilihan dengan harga terbaik.</p>
+                        
+                        <div class="flex flex-col sm:flex-row gap-2 bg-white p-2 rounded-xl shadow-md">
+                            <div class="flex-grow flex items-center px-3">
+                                <i class="fas fa-search text-slate-400 mr-2"></i>
+                                <input type="text" id="search-input" value="${state.searchQuery}" oninput="state.searchQuery=this.value; renderHome(document.getElementById('app-content'))" placeholder="Cari judul buku, penulis, atau penerbit..." class="w-full text-slate-800 text-sm focus:outline-none py-2">
+                            </div>
+                            <select onchange="state.filterCat=this.value; renderHome(document.getElementById('app-content'))" class="text-slate-700 text-sm bg-slate-100 rounded-lg px-3 py-2 focus:outline-none">
+                                <option value="">Semua Kategori</option>
+                                ${db.categories.map(c => `<option value="${c.id}" ${state.filterCat == c.id ? 'selected' : ''}>${c.nama_kategori}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Kategori Cepat -->
+                <div class="flex items-center space-x-2 overflow-x-auto pb-4 mb-6">
+                    <button onclick="state.filterCat=''; render()" class="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition ${state.filterCat === '' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}">
+                        Semua Buku
+                    </button>
+                    ${db.categories.map(c => `
+                        <button onclick="state.filterCat='${c.id}'; render()" class="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition ${state.filterCat == c.id ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}">
+                            ${c.nama_kategori}
+                        </button>
+                    `).join('')}
+                </div>
+
+                <!-- Grid Buku -->
+                ${filteredBooks.length > 0 ? `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        ${filteredBooks.map(book => {
+                            const cat = db.categories.find(c => c.id == book.category_id);
+                            return `
+                                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col">
+                                    <div class="${book.cover_color} h-44 p-5 flex flex-col justify-between text-white">
+                                        <span class="self-start px-2.5 py-1 bg-black/25 rounded-lg text-[11px] font-semibold">
+                                            ${cat ? cat.nama_kategori : 'Umum'}
+                                        </span>
+                                        <div>
+                                            <p class="text-xs opacity-80">${book.penulis}</p>
+                                            <h3 class="font-bold text-lg leading-snug line-clamp-2">${book.judul}</h3>
+                                        </div>
+                                    </div>
+                                    <div class="p-5 flex-grow flex flex-col justify-between">
+                                        <div>
+                                            <div class="flex justify-between items-center text-xs text-slate-500 mb-2">
+                                                <span><i class="fas fa-building mr-1"></i> ${book.penerbit} (${book.tahun_terbit})</span>
+                                                <span class="font-semibold ${book.stok > 0 ? 'text-emerald-600' : 'text-rose-600'}">Stok: ${book.stok}</span>
+                                            </div>
+                                            <p class="text-xs text-slate-600 line-clamp-2 mb-4">${book.deskripsi}</p>
+                                        </div>
+                                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                                            <div>
+                                                <p class="text-[11px] text-slate-400">Harga</p>
+                                                <p class="text-base font-extrabold text-indigo-600">${formatRupiah(book.harga)}</p>
+                                            </div>
+                                            ${!isAdmin ? `
+                                                <button onclick="addToCart(${book.id})" ${book.stok <= 0 ? 'disabled' : ''} class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition ${book.stok > 0 ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                                                    <i class="fas fa-cart-plus"></i>
+                                                    <span>${book.stok > 0 ? '+ Keranjang' : 'Habis'}</span>
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : `
+                    <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+                        <i class="fas fa-book-dead text-4xl text-slate-300 mb-3"></i>
+                        <h3 class="text-lg font-bold text-slate-800">Buku Tidak Ditemukan</h3>
+                        <p class="text-sm text-slate-500 mb-4">Coba gunakan kata kunci pencarian lain.</p>
+                        <button onclick="state.searchQuery=''; state.filterCat=''; render()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl">Reset Pencarian</button>
+                    </div>
+                `}
+            `;
+            // Pertahankan fokus kursor saat mengetik pencarian
+            const input = document.getElementById('search-input');
+            if (input && document.activeElement !== input && state.searchQuery) {
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            }
+        }
+
+        function addToCart(bookId) {
+            if (!state.currentUser) {
+                showFlash('error', 'Silakan login terlebih dahulu untuk menambahkan buku ke keranjang.');
+                navigate('login');
+                return;
+            }
+            const book = db.books.find(b => b.id === bookId);
+            if (!book || book.stok <= 0) return;
+
+            const existing = db.carts.find(c => c.user_id === state.currentUser.id && c.book_id === bookId);
+            if (existing) {
+                if (existing.qty < book.stok) {
+                    existing.qty++;
+                    showFlash('success', `Jumlah buku "${book.judul}" di keranjang ditambah.`);
+                } else {
+                    showFlash('error', 'Jumlah di keranjang sudah mencapai batas stok tersedia.');
+                }
+            } else {
+                db.carts.push({ id: Date.now(), user_id: state.currentUser.id, book_id: bookId, qty: 1 });
+                showFlash('success', `Buku "${book.judul}" berhasil dimasukkan ke keranjang!`);
+            }
+            renderNavbar();
+        }
+
+        // 2. LOGIN
+        function renderLogin(container) {
+            container.innerHTML = `
+                <div class="max-w-md mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <div class="text-center mb-6">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 mb-3">
+                            <i class="fas fa-user-lock text-xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-extrabold text-slate-900">Masuk ke BookStore</h2>
+                        <p class="text-sm text-slate-500 mt-1">Silakan login sebagai Admin atau User</p>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-6 text-xs text-slate-600 space-y-2">
+                        <p class="font-bold text-slate-800"><i class="fas fa-info-circle text-indigo-600 mr-1"></i> Akun Demo (Klik untuk Login Cepat):</p>
+                        <div class="flex gap-2 pt-1">
+                            <button type="button" onclick="quickLogin('admin')" class="flex-1 py-2 bg-indigo-100 text-indigo-700 font-bold rounded-lg hover:bg-indigo-200">Admin Demo</button>
+                            <button type="button" onclick="quickLogin('user')" class="flex-1 py-2 bg-emerald-100 text-emerald-700 font-bold rounded-lg hover:bg-emerald-200">User Demo</button>
+                        </div>
+                    </div>
+
+                    <form onsubmit="handleLogin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Alamat Email</label>
+                            <input type="email" id="login-email" required placeholder="admin@bookstore.com / user@bookstore.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Password (Default: 123)</label>
+                            <input type="password" id="login-pass" required placeholder="123" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-sm transition">
+                            Login Sekarang
+                        </button>
+                    </form>
+
+                    <p class="text-center text-xs text-slate-500 mt-6">
+                        Belum punya akun pembeli? <button onclick="navigate('register')" class="text-indigo-600 font-semibold hover:underline">Daftar User Baru</button>
+                    </p>
+                </div>
+            `;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const user = db.users.find(u => u.email === email && u.password === pass);
+            if (user) {
+                state.currentUser = user;
+                showFlash('success', `Selamat datang kembali, ${user.nama}!`);
+                navigate(user.role === 'admin' ? 'admin_dashboard' : 'home');
+            } else {
+                showFlash('error', 'Email atau Password salah! (Gunakan password: 123)');
+            }
+        }
+
+        // 3. REGISTRASI USER
+        function renderRegister(container) {
+            container.innerHTML = `
+                <div class="max-w-md mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <div class="text-center mb-6">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 mb-3">
+                            <i class="fas fa-user-plus text-xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-extrabold text-slate-900">Registrasi Akun User</h2>
+                        <p class="text-sm text-slate-500 mt-1">Buat akun untuk mulai memesan buku favorit Anda</p>
+                    </div>
+
+                    <form onsubmit="handleRegister(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Lengkap</label>
+                            <input type="text" id="reg-nama" required placeholder="Masukkan nama lengkap" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Alamat Email</label>
+                            <input type="email" id="reg-email" required placeholder="email@contoh.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+                            <input type="password" id="reg-pass" required placeholder="Buat password" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Alamat Lengkap Pengiriman</label>
+                            <textarea id="reg-alamat" rows="2" required placeholder="Jl. Contoh No. 123, Kota..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-sm transition">
+                            Daftar Sekarang
+                        </button>
+                    </form>
+                </div>
+            `;
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const nama = document.getElementById('reg-nama').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-pass').value;
+            const alamat = document.getElementById('reg-alamat').value.trim();
+
+            if (db.users.some(u => u.email === email)) {
+                showFlash('error', 'Email sudah terdaftar!');
+                return;
+            }
+            db.users.push({
+                id: Date.now(),
+                nama, email, password, role: 'user', alamat,
+                created_at: new Date().toISOString().slice(0, 16).replace('T', ' ')
+            });
+            showFlash('success', 'Registrasi berhasil! Silakan login menggunakan akun baru Anda.');
+            navigate('login');
+        }
+
+        // 4. CART (KERANJANG BELANJA)
+        function renderCart(container) {
+            if (!state.currentUser) {
+                navigate('login');
+                return;
+            }
+            const userCarts = db.carts.filter(c => c.user_id === state.currentUser.id);
+            let grandTotal = 0;
+
+            container.innerHTML = `
+                <div class="max-w-4xl mx-auto">
+                    <h2 class="text-2xl font-extrabold text-slate-900 mb-6 flex items-center">
+                        <i class="fas fa-shopping-cart text-indigo-600 mr-3"></i> Keranjang Belanja Anda
+                    </h2>
+
+                    ${userCarts.length > 0 ? `
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+                            <div class="divide-y divide-slate-100">
+                                ${userCarts.map(item => {
+                                    const book = db.books.find(b => b.id === item.book_id);
+                                    const subtotal = book.harga * item.qty;
+                                    grandTotal += subtotal;
+                                    return `
+                                        <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <div class="flex items-center space-x-4">
+                                                <div class="${book.cover_color} w-14 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xs shrink-0">BUKU</div>
+                                                <div>
+                                                    <h3 class="font-bold text-slate-900">${book.judul}</h3>
+                                                    <p class="text-xs text-slate-500">Penulis: ${book.penulis}</p>
+                                                    <p class="text-sm font-semibold text-indigo-600 mt-1">${formatRupiah(book.harga)} / pcs</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center justify-between sm:justify-end space-x-4">
+                                                <div class="flex items-center space-x-2">
+                                                    <input type="number" value="${item.qty}" min="1" max="${book.stok}" onchange="updateCartQty(${item.id}, this.value)" class="w-16 px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm text-center">
+                                                </div>
+                                                <div class="text-right min-w-[110px]">
+                                                    <p class="text-xs text-slate-400">Subtotal</p>
+                                                    <p class="font-bold text-slate-900">${formatRupiah(subtotal)}</p>
+                                                </div>
+                                                <button onclick="removeCartItem(${item.id})" class="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            <div class="bg-slate-50 p-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div>
+                                    <p class="text-xs text-slate-500">Total Pembayaran</p>
+                                    <p class="text-2xl font-extrabold text-indigo-600">${formatRupiah(grandTotal)}</p>
+                                </div>
+                                <div class="flex space-x-3 w-full sm:w-auto">
+                                    <button onclick="navigate('home')" class="px-5 py-3 bg-white border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-100">Lanjut Belanja</button>
+                                    <button onclick="checkoutCart()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm transition">
+                                        <i class="fas fa-check-circle mr-1.5"></i> Checkout Pesanan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+                            <i class="fas fa-shopping-basket text-4xl text-slate-300 mb-3"></i>
+                            <h3 class="text-lg font-bold text-slate-800">Keranjang Belanja Kosong</h3>
+                            <p class="text-sm text-slate-500 mb-5">Anda belum menambahkan buku apa pun ke dalam keranjang.</p>
+                            <button onclick="navigate('home')" class="px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl shadow-sm">Jelajahi Katalog Buku</button>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function updateCartQty(cartId, qty) {
+            const item = db.carts.find(c => c.id === cartId);
+            if (item) {
+                item.qty = Math.max(1, parseInt(qty));
+                render();
+            }
+        }
+
+        function removeCartItem(cartId) {
+            db.carts = db.carts.filter(c => c.id !== cartId);
+            showFlash('success', 'Item dihapus dari keranjang.');
+            render();
+        }
+
+        function checkoutCart() {
+            const userCarts = db.carts.filter(c => c.user_id === state.currentUser.id);
+            userCarts.forEach(item => {
+                const book = db.books.find(b => b.id === item.book_id);
+                if (book) book.stok = Math.max(0, book.stok - item.qty);
+            });
+            db.carts = db.carts.filter(c => c.user_id !== state.currentUser.id);
+            showFlash('success', 'Pesanan berhasil diproses & stok buku otomatis berkurang! Terima kasih.');
+            render();
+        }
+
+        // 5. ABOUT US
+        function renderAbout(container) {
+            container.innerHTML = `
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="bg-indigo-600 p-8 sm:p-12 text-white">
+                        <h1 class="text-3xl font-extrabold mb-2">Tentang BookStore</h1>
+                        <p class="text-indigo-100">Mitra literasi dan sumber pengetahuan terpercaya untuk generasi masa depan.</p>
+                    </div>
+                    <div class="p-8 space-y-6 text-slate-600 text-sm leading-relaxed">
+                        <p>
+                            <strong>BookStore</strong> adalah platform toko buku digital yang dirancang untuk memudahkan masyarakat dalam mencari, menemukan, dan membeli berbagai jenis buku berkualitas—mulai dari buku teknologi informasi, manajemen bisnis, sains, hingga karya sastra pilihan.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                            <div class="p-5 bg-slate-50 rounded-xl border border-slate-100">
+                                <i class="fas fa-award text-2xl text-indigo-600 mb-2"></i>
+                                <h3 class="font-bold text-slate-900 mb-1">100% Buku Original</h3>
+                                <p class="text-xs">Bekerja sama langsung dengan penerbit resmi di seluruh Indonesia.</p>
+                            </div>
+                            <div class="p-5 bg-slate-50 rounded-xl border border-slate-100">
+                                <i class="fas fa-truck-fast text-2xl text-emerald-600 mb-2"></i>
+                                <h3 class="font-bold text-slate-900 mb-1">Pengiriman Cepat</h3>
+                                <p class="text-xs">Pengemasan aman dan pengiriman ke seluruh wilayah Nusantara.</p>
+                            </div>
+                            <div class="p-5 bg-slate-50 rounded-xl border border-slate-100">
+                                <i class="fas fa-headset text-2xl text-amber-600 mb-2"></i>
+                                <h3 class="font-bold text-slate-900 mb-1">Layanan Pelanggan</h3>
+                                <p class="text-xs">Admin kami siap membantu kebutuhan pemesanan buku Anda.</p>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-slate-100">
+                            <h3 class="font-bold text-slate-900 mb-2">Alamat Kantor Pusat:</h3>
+                            <p><i class="fas fa-map-marker-alt text-rose-500 mr-2"></i> Jl. MT. Haryono Kavling 52, Jakarta, Indonesia.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 6. CONTACT ADMIN
+        function renderContact(container) {
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-extrabold text-slate-900">Hubungi Admin (Contact Us)</h2>
+                        <p class="text-sm text-slate-500 mt-1">Punya pertanyaan seputar ketersediaan buku atau pesanan? Kirimkan pesan langsung kepada Admin kami.</p>
+                    </div>
+                    <form onsubmit="handleContact(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Anda</label>
+                                <input type="text" id="msg-nama" required value="${state.currentUser ? state.currentUser.nama : ''}" placeholder="Nama lengkap" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Email Anda</label>
+                                <input type="email" id="msg-email" required value="${state.currentUser ? state.currentUser.email : ''}" placeholder="email@anda.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Subjek Pesan</label>
+                            <input type="text" id="msg-subjek" required placeholder="Contoh: Permintaan Buku / Status Pesanan" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Isi Pesan</label>
+                            <textarea id="msg-isi" rows="4" required placeholder="Tuliskan pesan Anda secara detail di sini..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-sm transition">
+                            <i class="fas fa-paper-plane mr-2"></i> Kirim Pesan ke Admin
+                        </button>
+                    </form>
+                </div>
+            `;
+        }
+
+        function handleContact(e) {
+            e.preventDefault();
+            db.messages.unshift({
+                id: Date.now(),
+                nama_pengirim: document.getElementById('msg-nama').value,
+                email_pengirim: document.getElementById('msg-email').value,
+                subjek: document.getElementById('msg-subjek').value,
+                pesan: document.getElementById('msg-isi').value,
+                created_at: new Date().toISOString().slice(0, 16).replace('T', ' ')
+            });
+            showFlash('success', 'Pesan Anda berhasil dikirim ke Admin! Anda bisa mengeceknya di Panel Admin -> Pesan Masuk.');
+            e.target.reset();
+        }
+
+        // 7. PANEL ADMIN
+        function renderAdmin(container) {
+            const p = state.currentPage;
+            const totalUsers = db.users.filter(u => u.role === 'user').length;
+
+            let subContent = '';
+
+            if (p === 'admin_dashboard') {
+                subContent = `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Total Judul Buku</p>
+                            <p class="text-3xl font-extrabold text-indigo-600 mt-2">${db.books.length}</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Kategori Buku</p>
+                            <p class="text-3xl font-extrabold text-emerald-600 mt-2">${db.categories.length}</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-400 uppercase">User Terdaftar</p>
+                            <p class="text-3xl font-extrabold text-amber-600 mt-2">${totalUsers}</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Pesan dari User</p>
+                            <p class="text-3xl font-extrabold text-rose-600 mt-2">${db.messages.length}</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-lg text-slate-900 mb-2">Selamat Datang di Panel Kontrol Administrator</h3>
+                        <p class="text-sm text-slate-600">Gunakan menu navigasi di atas untuk menambah/mengubah/menghapus Kategori Buku, mengelola Data Buku, memantau daftar User terdaftar, serta membaca pesan masuk.</p>
+                    </div>
+                `;
+            } else if (p === 'admin_categories') {
+                const editCat = state.editCatId ? db.categories.find(c => c.id === state.editCatId) : null;
+                subContent = `
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                            <h3 class="font-bold text-lg text-slate-900 mb-4">${editCat ? 'Edit Kategori Buku' : 'Tambah Kategori Baru'}</h3>
+                            <form onsubmit="saveCategory(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kategori</label>
+                                    <input type="text" id="cat-nama" required value="${editCat ? editCat.nama_kategori : ''}" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi</label>
+                                    <textarea id="cat-desc" rows="3" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm">${editCat ? editCat.deskripsi : ''}</textarea>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl">${editCat ? 'Update Kategori' : 'Simpan Kategori'}</button>
+                                    ${editCat ? `<button type="button" onclick="state.editCatId=null; render()" class="px-4 py-2.5 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl">Batal</button>` : ''}
+                                </div>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="p-5 border-b border-slate-100"><h3 class="font-bold text-slate-900">Daftar Kategori Buku</h3></div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                                        <tr><th class="px-5 py-3">No</th><th class="px-5 py-3">Nama Kategori</th><th class="px-5 py-3">Deskripsi</th><th class="px-5 py-3 text-right">Aksi</th></tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${db.categories.map((c, idx) => `
+                                            <tr>
+                                                <td class="px-5 py-3.5 text-slate-500">${idx + 1}</td>
+                                                <td class="px-5 py-3.5 font-semibold text-slate-900">${c.nama_kategori}</td>
+                                                <td class="px-5 py-3.5 text-slate-600 text-xs">${c.deskripsi}</td>
+                                                <td class="px-5 py-3.5 text-right space-x-2 whitespace-nowrap">
+                                                    <button onclick="state.editCatId=${c.id}; render()" class="px-2.5 py-1 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg text-xs font-semibold">Edit</button>
+                                                    <button onclick="deleteCategory(${c.id})" class="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-semibold">Hapus</button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (p === 'admin_books') {
+                const editBook = state.editBookId ? db.books.find(b => b.id === state.editBookId) : null;
+                subContent = `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6">
+                        <h3 class="font-bold text-lg text-slate-900 mb-4">${editBook ? 'Edit Data Buku' : 'Tambah Data Buku Baru'}</h3>
+                        <form onsubmit="saveBook(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Judul Buku</label>
+                                <input type="text" id="book-judul" required value="${editBook ? editBook.judul : ''}" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
+                                <select id="book-cat" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+                                    ${db.categories.map(c => `<option value="${c.id}" ${editBook && editBook.category_id == c.id ? 'selected' : ''}>${c.nama_kategori}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Penulis</label>
+                                <input type="text" id="book-penulis" required value="${editBook ? editBook.penulis : ''}" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Penerbit</label>
+                                <input type="text" id="book-penerbit" required value="${editBook ? editBook.penerbit : ''}" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm">
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tahun</label>
+                                    <input type="number" id="book-tahun" required value="${editBook ? editBook.tahun_terbit : 2025}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Harga (Rp)</label>
+                                    <input type="number" id="book-harga" required value="${editBook ? editBook.harga : 100000}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Stok</label>
+                                    <input type="number" id="book-stok" required value="${editBook ? editBook.stok : 10}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Warna Cover</label>
+                                <select id="book-color" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+                                    <option value="bg-blue-600" ${editBook?.cover_color === 'bg-blue-600' ? 'selected' : ''}>Biru</option>
+                                    <option value="bg-indigo-600" ${editBook?.cover_color === 'bg-indigo-600' ? 'selected' : ''}>Indigo</option>
+                                    <option value="bg-emerald-600" ${editBook?.cover_color === 'bg-emerald-600' ? 'selected' : ''}>Hijau Emerald</option>
+                                    <option value="bg-amber-600" ${editBook?.cover_color === 'bg-amber-600' ? 'selected' : ''}>Oranye Amber</option>
+                                    <option value="bg-purple-600" ${editBook?.cover_color === 'bg-purple-600' ? 'selected' : ''}>Ungu</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Sinopsis / Deskripsi</label>
+                                <input type="text" id="book-desc" value="${editBook ? editBook.deskripsi : ''}" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm">
+                            </div>
+                            <div class="flex items-end gap-2">
+                                <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl">${editBook ? 'Update Data Buku' : 'Simpan Buku'}</button>
+                                ${editBook ? `<button type="button" onclick="state.editBookId=null; render()" class="px-4 py-2.5 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl">Batal</button>` : ''}
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-slate-100"><h3 class="font-bold text-slate-900">Manajemen Data Buku</h3></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                                    <tr><th class="px-5 py-3">Judul & Penulis</th><th class="px-5 py-3">Kategori</th><th class="px-5 py-3">Harga</th><th class="px-5 py-3">Stok</th><th class="px-5 py-3 text-right">Aksi</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${db.books.map(b => {
+                                        const cat = db.categories.find(c => c.id == b.category_id);
+                                        return `
+                                            <tr>
+                                                <td class="px-5 py-3.5">
+                                                    <p class="font-bold text-slate-900">${b.judul}</p>
+                                                    <p class="text-xs text-slate-500">${b.penulis} (${b.tahun_terbit})</p>
+                                                </td>
+                                                <td class="px-5 py-3.5 text-xs"><span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-medium">${cat ? cat.nama_kategori : '-'}</span></td>
+                                                <td class="px-5 py-3.5 font-semibold text-slate-900">${formatRupiah(b.harga)}</td>
+                                                <td class="px-5 py-3.5 font-bold ${b.stok > 0 ? 'text-emerald-600' : 'text-rose-600'}">${b.stok}</td>
+                                                <td class="px-5 py-3.5 text-right space-x-2 whitespace-nowrap">
+                                                    <button onclick="state.editBookId=${b.id}; render()" class="px-2.5 py-1 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg text-xs font-semibold">Edit</button>
+                                                    <button onclick="deleteBook(${b.id})" class="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-semibold">Hapus</button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (p === 'admin_users') {
+                subContent = `
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-slate-100"><h3 class="font-bold text-slate-900">Daftar Pengguna (User & Admin) Terdaftar</h3></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                                    <tr><th class="px-5 py-3">No</th><th class="px-5 py-3">Nama Lengkap</th><th class="px-5 py-3">Email</th><th class="px-5 py-3">Role</th><th class="px-5 py-3">Alamat</th><th class="px-5 py-3">Tanggal Daftar</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${db.users.map((u, i) => `
+                                        <tr>
+                                            <td class="px-5 py-3.5 text-slate-500">${i + 1}</td>
+                                            <td class="px-5 py-3.5 font-semibold text-slate-900">${u.nama}</td>
+                                            <td class="px-5 py-3.5 text-slate-600">${u.email}</td>
+                                            <td class="px-5 py-3.5"><span class="px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${u.role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}">${u.role}</span></td>
+                                            <td class="px-5 py-3.5 text-xs text-slate-600">${u.alamat}</td>
+                                            <td class="px-5 py-3.5 text-xs text-slate-500">${u.created_at}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (p === 'admin_messages') {
+                subContent = `
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-slate-100"><h3 class="font-bold text-slate-900">Pesan Masuk dari Pengunjung / User</h3></div>
+                        <div class="divide-y divide-slate-100">
+                            ${db.messages.map(m => `
+                                <div class="p-5">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <span class="font-bold text-slate-900">${m.subjek}</span>
+                                            <p class="text-xs text-slate-500">Dari: <strong>${m.nama_pengirim}</strong> (${m.email_pengirim})</p>
+                                        </div>
+                                        <span class="text-xs text-slate-400">${m.created_at}</span>
+                                    </div>
+                                    <p class="text-sm text-slate-700 bg-slate-50 p-3.5 rounded-xl border border-slate-100">${m.pesan}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-2">
+                    <button onclick="navigate('admin_dashboard')" class="px-4 py-2 rounded-xl text-xs font-semibold transition ${p === 'admin_dashboard' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}"><i class="fas fa-chart-pie mr-1.5"></i> Dashboard</button>
+                    <button onclick="navigate('admin_categories')" class="px-4 py-2 rounded-xl text-xs font-semibold transition ${p === 'admin_categories' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}"><i class="fas fa-tags mr-1.5"></i> Kategori Buku (${db.categories.length})</button>
+                    <button onclick="navigate('admin_books')" class="px-4 py-2 rounded-xl text-xs font-semibold transition ${p === 'admin_books' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}"><i class="fas fa-book mr-1.5"></i> Data Buku (${db.books.length})</button>
+                    <button onclick="navigate('admin_users')" class="px-4 py-2 rounded-xl text-xs font-semibold transition ${p === 'admin_users' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}"><i class="fas fa-users mr-1.5"></i> List User Terdaftar (${totalUsers})</button>
+                    <button onclick="navigate('admin_messages')" class="px-4 py-2 rounded-xl text-xs font-semibold transition ${p === 'admin_messages' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}"><i class="fas fa-envelope mr-1.5"></i> Pesan Masuk (${db.messages.length})</button>
+                </div>
+                ${subContent}
+            `;
+        }
+
+        // CRUD Handlers Admin
+        function saveCategory(e) {
+            e.preventDefault();
+            const nama_kategori = document.getElementById('cat-nama').value.trim();
+            const deskripsi = document.getElementById('cat-desc').value.trim();
+            if (state.editCatId) {
+                const cat = db.categories.find(c => c.id === state.editCatId);
+                if (cat) { cat.nama_kategori = nama_kategori; cat.deskripsi = deskripsi; }
+                showFlash('success', 'Kategori buku berhasil diperbarui.');
+                state.editCatId = null;
+            } else {
+                db.categories.push({ id: Date.now(), nama_kategori, deskripsi });
+                showFlash('success', 'Kategori buku baru berhasil ditambahkan.');
+            }
+            render();
+        }
+
+        function deleteCategory(id) {
+            db.categories = db.categories.filter(c => c.id !== id);
+            showFlash('success', 'Kategori berhasil dihapus.');
+            render();
+        }
+
+        function saveBook(e) {
+            e.preventDefault();
+            const data = {
+                judul: document.getElementById('book-judul').value.trim(),
+                category_id: parseInt(document.getElementById('book-cat').value),
+                penulis: document.getElementById('book-penulis').value.trim(),
+                penerbit: document.getElementById('book-penerbit').value.trim(),
+                tahun_terbit: parseInt(document.getElementById('book-tahun').value),
+                harga: parseFloat(document.getElementById('book-harga').value),
+                stok: parseInt(document.getElementById('book-stok').value),
+                cover_color: document.getElementById('book-color').value,
+                deskripsi: document.getElementById('book-desc').value.trim()
+            };
+            if (state.editBookId) {
+                const idx = db.books.findIndex(b => b.id === state.editBookId);
+                if (idx !== -1) db.books[idx] = { ...db.books[idx], ...data };
+                showFlash('success', 'Data buku berhasil diperbarui.');
+                state.editBookId = null;
+            } else {
+                db.books.unshift({ id: Date.now(), ...data });
+                showFlash('success', 'Buku baru berhasil ditambahkan ke katalog.');
+            }
+            render();
+        }
+
+        function deleteBook(id) {
+            db.books = db.books.filter(b => b.id !== id);
+            showFlash('success', 'Data buku berhasil dihapus.');
+            render();
+        }
+
+        // Inisialisasi Awal
+        window.onload = render;
+    </script>
+</body>
+</html>
